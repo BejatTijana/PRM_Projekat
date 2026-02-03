@@ -1,0 +1,25 @@
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio folders
+.vs/
+.vscode/
+
+# Visual Studio cache
+*.VC.db
+*.VC.opendb
+
+# NuGet Packages
+*.nupkg
+packages/
