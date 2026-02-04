@@ -12,7 +12,6 @@ class Client
     {
         Console.WriteLine("--- Klijentska aplikacija pokrenuta ---");
 
-       
         Socket udpSocket = new Socket(AddressFamily.InterNetwork,
                                       SocketType.Dgram,
                                       ProtocolType.Udp);
@@ -20,7 +19,6 @@ class Client
         IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP),
                                                    SERVER_UDP_PORT);
 
-        
         string registrationMessage = "REGISTER";
         byte[] messageBytes = Encoding.UTF8.GetBytes(registrationMessage);
 
@@ -29,19 +27,26 @@ class Client
             udpSocket.SendTo(messageBytes, serverEndPoint);
             Console.WriteLine("[UDP] Poslata poruka 'REGISTER' serveru...");
 
-            
             byte[] buffer = new byte[1024];
             EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-            
             int bytesReceived = udpSocket.ReceiveFrom(buffer, ref remoteEndPoint);
-
             string response = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
 
             if (int.TryParse(response, out int tcpPort))
             {
                 Console.WriteLine($"[UDP] Uspješna prijava! Primljen TCP port: {tcpPort}");
-               
+
+                Socket tcpSocket = new Socket(AddressFamily.InterNetwork,
+                                              SocketType.Stream,
+                                              ProtocolType.Tcp);
+
+                IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), tcpPort);
+
+                tcpSocket.Connect(tcpEndPoint);
+                Console.WriteLine($"[TCP] Uspostavljena konekcija sa serverom na portu {tcpPort}!");
+
+                tcpSocket.Close();
             }
             else
             {
@@ -55,7 +60,7 @@ class Client
         finally
         {
             udpSocket.Close();
-            Console.WriteLine("\nUDP utičnica zatvorena. Pritisnite bilo koji taster za kraj.");
+            Console.WriteLine("\nKlijent završio. Pritisnite bilo koji taster za kraj.");
             Console.ReadKey();
         }
     }
