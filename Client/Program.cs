@@ -65,7 +65,7 @@ namespace Client
                     Console.Write("Zauzeće memorije (%): ");
                     double memorija = double.Parse(Console.ReadLine());
 
-                    Proces proces = new Proces(naziv, vreme, prioritet, cpu, memorija);
+                    Proces proces = new Proces(naziv, vrijeme, prioritet, cpu, memorija);
 
                     string json = System.Text.Json.JsonSerializer.Serialize(proces);
                     byte[] data = Encoding.UTF8.GetBytes(json);

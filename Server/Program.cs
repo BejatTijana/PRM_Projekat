@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Server
 {
-    // Zadatak 7: Klasa za čuvanje informacija o svakom klijentu
+    
     class ClientInfo
     {
         public Socket TcpSocket { get; set; }
@@ -26,9 +26,14 @@ namespace Server
 
     class Server
     {
-        // Zadatak 2: Dve double promenljive za trenutno zauzeće
+        
         private static double currentCpuUsage = 0.0;
         private static double currentMemoryUsage = 0.0;
+
+       
+        private static double maxCpuUsage = 0.0;
+        private static double maxMemoryUsage = 0.0;
+        private static Proces shortestProces = null;
 
         private const int UDP_PORT = 51000;
         private const int TCP_PORT_FOR_CLIENTS = 52000;
@@ -40,17 +45,17 @@ namespace Server
         private static int quantum = 0;
         private static List<Proces> procesiList = new List<Proces>();
 
-        // Zadatak 7: Lista svih konektovanih klijenata
+       
         private static List<ClientInfo> clients = new List<ClientInfo>();
 
         static void Main(string[] args)
         {
-            Console.WriteLine("╔════════════════════════════════════════╗");
-            Console.WriteLine("║    RASPOREĐIVAČ PROCESA - SERVER      ║");
-            Console.WriteLine("╚════════════════════════════════════════╝");
+           
+            Console.WriteLine("   RASPOREĐIVAČ PROCESA - SERVER     ");
+            
             Console.WriteLine();
 
-            // Zadatak 2: Izbor algoritma raspoređivanja
+            
             Console.WriteLine("Izaberite algoritam raspoređivanja:");
             Console.WriteLine("  1. Round Robin");
             Console.WriteLine("  2. Najkraće vrijeme izvršavanja (SJF)");
@@ -68,26 +73,26 @@ namespace Server
                 schedulingAlgorithm = "SJF";
             }
 
-            // Zadatak 2: UDP Socket za prijavu klijenata
+           
             Socket udpSocket = new Socket(AddressFamily.InterNetwork,
                                           SocketType.Dgram,
                                           ProtocolType.Udp);
             IPEndPoint udpEndPoint = new IPEndPoint(IPAddress.Any, UDP_PORT);
             udpSocket.Bind(udpEndPoint);
-            udpSocket.Blocking = false; // Zadatak 7: Neblokirajući režim
+            udpSocket.Blocking = false; 
 
-            // Zadatak 2: TCP Listen Socket
+            
             Socket tcpListenSocket = new Socket(AddressFamily.InterNetwork,
                                                SocketType.Stream,
                                                ProtocolType.Tcp);
             IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Any, TCP_PORT_FOR_CLIENTS);
             tcpListenSocket.Bind(tcpEndPoint);
             tcpListenSocket.Listen(10);
-            tcpListenSocket.Blocking = false; // Zadatak 7: Neblokirajući režim
+            tcpListenSocket.Blocking = false; 
 
             Console.WriteLine();
             Console.WriteLine("════════════════════════════════════════");
-            Console.WriteLine("✅ Server uspješno pokrenut!");
+            Console.WriteLine("    Server uspješno pokrenut!");
             Console.WriteLine($"   UDP port:  {UDP_PORT}");
             Console.WriteLine($"   TCP port:  {TCP_PORT_FOR_CLIENTS}");
             Console.WriteLine($"   Algoritam: {schedulingAlgorithm}" +
@@ -95,16 +100,16 @@ namespace Server
             Console.WriteLine("════════════════════════════════════════");
             Console.WriteLine("\nČekam klijente...\n");
 
-            // === ZADATAK 7: Glavna petlja sa Select multipleksiranjem ===
+           
             while (true)
             {
-                // Zadatak 7: Lista socket-a za praćenje
+                
                 List<Socket> readSockets = new List<Socket>();
 
                 readSockets.Add(udpSocket);
                 readSockets.Add(tcpListenSocket);
 
-                // Zadatak 7: Dodaj sve klijentske TCP socket-e
+                
                 foreach (var client in clients)
                 {
                     readSockets.Add(client.TcpSocket);
@@ -112,11 +117,10 @@ namespace Server
 
                 try
                 {
-                    // Zadatak 7: Select - čeka događaje na socket-ima
-                    // Timeout: 1000000 microsekundi = 1 sekunda
+                    
                     Socket.Select(readSockets, null, null, 1000000);
 
-                    // Obradi sve socket-e koji imaju podatke
+                    
                     foreach (Socket socket in readSockets)
                     {
                         if (socket == udpSocket)
@@ -133,7 +137,7 @@ namespace Server
                         }
                     }
 
-                    // Obrada procesa iz liste
+                    
                     if (procesiList.Count > 0)
                     {
                         ProcessNext();
@@ -146,7 +150,7 @@ namespace Server
             }
         }
 
-        // Zadatak 7: Obrada UDP registracije
+        
         static void HandleUdpRegistration(Socket udpSocket)
         {
             try
@@ -159,14 +163,14 @@ namespace Server
 
                 if (message == "REGISTER")
                 {
-                    Console.WriteLine($"[UDP] 📝 Primljena prijava od: {clientEndPoint}");
+                    Console.WriteLine($"[UDP]   Primljena prijava od: {clientEndPoint}");
 
-                    // Zadatak 2: Pošalji TCP port klijentu
+                    
                     string response = TCP_PORT_FOR_CLIENTS.ToString();
                     byte[] responseBytes = Encoding.UTF8.GetBytes(response);
                     udpSocket.SendTo(responseBytes, clientEndPoint);
 
-                    Console.WriteLine($"[UDP] ✉️  Poslat TCP port {response} klijentu.\n");
+                    Console.WriteLine($"[UDP]   Poslat TCP port {response} klijentu.\n");
                 }
             }
             catch (SocketException ex)
@@ -178,22 +182,22 @@ namespace Server
             }
         }
 
-        // Zadatak 7: Prihvatanje nove TCP konekcije
+        
         static void HandleNewTcpConnection(Socket tcpListenSocket)
         {
             try
             {
                 Socket acceptedSocket = tcpListenSocket.Accept();
 
-                // Zadatak 7: Postavi u neblokirajući režim
+                
                 acceptedSocket.Blocking = false;
 
-                // Zadatak 7: Kreiraj ClientInfo i dodaj u listu
+                
                 ClientInfo newClient = new ClientInfo(acceptedSocket);
                 clients.Add(newClient);
 
-                Console.WriteLine($"[TCP] 🔗 Novi klijent povezan: {newClient.EndPoint}");
-                Console.WriteLine($"      👥 Ukupno aktivnih klijenata: {clients.Count}\n");
+                Console.WriteLine($"[TCP]   Novi klijent povezan: {newClient.EndPoint}");
+                Console.WriteLine($"        Ukupno aktivnih klijenata: {clients.Count}\n");
             }
             catch (SocketException ex)
             {
@@ -204,7 +208,7 @@ namespace Server
             }
         }
 
-        // Zadatak 7: Obrada podataka od klijenta
+        
         static void HandleClientData(Socket socket)
         {
             ClientInfo client = clients.FirstOrDefault(c => c.TcpSocket == socket);
@@ -217,57 +221,68 @@ namespace Server
 
                 if (bytesReceived == 0)
                 {
-                    // Klijent se diskonektovao
-                    Console.WriteLine($"[TCP] ❌ Klijent {client.EndPoint} se diskonektovao.");
+                    
+                    Console.WriteLine($"[TCP]  Klijent {client.EndPoint} se diskonektovao.");
 
-                    // Zadatak 6: Prosleđivanje preostalih procesa
+                    
                     if (client.PendingProcesi.Count > 0)
                     {
-                        Console.WriteLine($"      📦 Dodajem {client.PendingProcesi.Count} pending procesa...");
+                        Console.WriteLine($"       Dodajem {client.PendingProcesi.Count} pending procesa...");
 
-                        foreach (var proces in client.PendingProcesi)
+                        foreach (var trenutniProces in client.PendingProcesi)
                         {
-                            if ((currentCpuUsage + proces.ZauzeceProcessora <= MAX_CPU) &&
-                                (currentMemoryUsage + proces.ZauzeceMemorije <= MAX_MEMORY))
+                            if ((currentCpuUsage + trenutniProces.ZauzeceProcessora <= MAX_CPU) &&
+                                (currentMemoryUsage + trenutniProces.ZauzeceMemorije <= MAX_MEMORY))
                             {
-                                procesiList.Add(proces);
-                                currentCpuUsage += proces.ZauzeceProcessora;
-                                currentMemoryUsage += proces.ZauzeceMemorije;
+                                procesiList.Add(trenutniProces);
+                                currentCpuUsage += trenutniProces.ZauzeceProcessora;
+                                currentMemoryUsage += trenutniProces.ZauzeceMemorije;
 
-                                Console.WriteLine($"         ✅ Dodat: {proces.Naziv}");
+                                if (currentCpuUsage > maxCpuUsage) maxCpuUsage = currentCpuUsage;
+                                if (currentMemoryUsage > maxMemoryUsage) maxMemoryUsage = currentMemoryUsage;
+
+                                Console.WriteLine($"          Dodat: {trenutniProces.Naziv}");
                             }
                         }
                     }
 
                     socket.Close();
                     clients.Remove(client);
-                    Console.WriteLine($"      👥 Preostalo aktivnih klijenata: {clients.Count}\n");
+                    Console.WriteLine($"       Preostalo aktivnih klijenata: {clients.Count}\n");
                     return;
                 }
 
-                // Zadatak 3: Deserijalizacija objekta Proces
+                
                 string json = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
                 Proces proces = JsonSerializer.Deserialize<Proces>(json);
 
                 Console.WriteLine($"[PRIMLJEN od {client.EndPoint}]");
                 Console.WriteLine($"  {proces}");
 
-                // Zadatak 3: Provera resursa
+                
                 if ((currentCpuUsage + proces.ZauzeceProcessora <= MAX_CPU) &&
                     (currentMemoryUsage + proces.ZauzeceMemorije <= MAX_MEMORY))
                 {
-                    // Zadatak 3: Dodaj u listu
+                    
                     procesiList.Add(proces);
                     currentCpuUsage += proces.ZauzeceProcessora;
                     currentMemoryUsage += proces.ZauzeceMemorije;
 
-                    Console.WriteLine($"  ✅ Prihvaćen! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)\n");
+                    
+                    if (currentCpuUsage > maxCpuUsage)
+                        maxCpuUsage = currentCpuUsage;
+
+                    if (currentMemoryUsage > maxMemoryUsage)
+                        maxMemoryUsage = currentMemoryUsage;
+
+                    Console.WriteLine($"   Prihvaćen! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)");
+                    Console.WriteLine($"     [Max do sada: CPU={maxCpuUsage:F1}%, RAM={maxMemoryUsage:F1}%]\n");
                 }
                 else
                 {
-                    // Zadatak 3: Proces se čuva na klijentu (pending)
+                    
                     client.PendingProcesi.Add(proces);
-                    Console.WriteLine($"  ❌ Nedovoljno resursa! Čuva se kao pending.\n");
+                    Console.WriteLine($"  Nedovoljno resursa! Čuva se kao pending.\n");
                 }
             }
             catch (SocketException ex)
@@ -279,62 +294,118 @@ namespace Server
             }
         }
 
-        // Obrada sledećeg procesa iz liste
+        
         static void ProcessNext()
         {
             if (procesiList.Count == 0) return;
 
-            Proces proces = null;
+            Proces trenutniProces = null;
 
             if (schedulingAlgorithm == "SJF")
             {
-                // Zadatak 4: SJF - najkraći prvi
-                proces = procesiList.OrderBy(p => p.VremeIzvrsavanja).First();
-                procesiList.Remove(proces);
 
-                Console.WriteLine($"[SJF] ⚙️  Izvršavam: {proces.Naziv} ({proces.VremeIzvrsavanja}s)");
-                Thread.Sleep(proces.VremeIzvrsavanja * 1000);
+                trenutniProces = procesiList.OrderBy(p => p.VrijemeIzvrsavanja).First();
+                procesiList.Remove(trenutniProces);
 
-                // Zadatak 6: Oslobodi resurse
-                currentCpuUsage -= proces.ZauzeceProcessora;
-                currentMemoryUsage -= proces.ZauzeceMemorije;
+                Console.WriteLine($"[SJF]   Izvršavam: {trenutniProces.Naziv} ({trenutniProces.VrijemeIzvrsavanja}s)");
+                Thread.Sleep(trenutniProces.VrijemeIzvrsavanja * 1000);
 
-                Console.WriteLine($"      ✅ Završeno! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)\n");
+                
+                if (shortestProces == null ||
+                    trenutniProces.VrijemeIzvrsavanja < shortestProces.VrijemeIzvrsavanja)
+                {
+                    shortestProces = new Proces(
+                        trenutniProces.Naziv,
+                        trenutniProces.VrijemeIzvrsavanja,
+                        trenutniProces.Prioritet,
+                        trenutniProces.ZauzeceProcessora,
+                        trenutniProces.ZauzeceMemorije
+                    );
+                }
+
+                
+                currentCpuUsage -= trenutniProces.ZauzeceProcessora;
+                currentMemoryUsage -= trenutniProces.ZauzeceMemorije;
+
+                Console.WriteLine($"       Završeno! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)\n");
             }
-            else // Round Robin
+            else 
             {
-                // Zadatak 5: Round Robin
-                proces = procesiList[0];
+
+                trenutniProces = procesiList[0];
                 procesiList.RemoveAt(0);
 
-                Console.WriteLine($"[RR] ⚙️  Izvršavam: {proces.Naziv} ({proces.VremeIzvrsavanja}s, quantum={quantum}s)");
+                Console.WriteLine($"[RR]   Izvršavam: {trenutniProces.Naziv} ({trenutniProces.VrijemeIzvrsavanja}s, quantum={quantum}s)");
 
-                if (proces.VremeIzvrsavanja > quantum)
+                if (trenutniProces.VrijemeIzvrsavanja > quantum)
                 {
-                    // Zadatak 5: Nije završen - izvršava samo quantum
+                    
                     Thread.Sleep(quantum * 1000);
-                    proces.VremeIzvrsavanja -= quantum;
-                    procesiList.Add(proces); // Zadatak 5: Vrati nazad u listu
+                    trenutniProces.VrijemeIzvrsavanja -= quantum;
+                    procesiList.Add(trenutniProces);
 
-                    Console.WriteLine("$Preostalo: {proces.VremeIzvrsavanja}s (vraćen u red)\n");
+                    Console.WriteLine($"       Preostalo: {trenutniProces.VrijemeIzvrsavanja}s (vraćen u red)\n");
                 }
                 else
                 {
-                    Thread.Sleep(proces.VrijemeIzvrsavanja * 1000);
+            
+                    Thread.Sleep(trenutniProces.VrijemeIzvrsavanja * 1000);
 
-                    currentCpuUsage -= proces.ZauzeceProcessora;
-                    currentMemoryUsage -= proces.ZauzeceMemorije;
+                    
+                    if (shortestProces == null ||
+                        trenutniProces.OriginalnoVrijemeIzvrsavanja < shortestProces.OriginalnoVrijemeIzvrsavanja)
+                    {
+                        shortestProces = new Proces(
+                            trenutniProces.Naziv,
+                            trenutniProces.OriginalnoVrijemeIzvrsavanja,
+                            trenutniProces.Prioritet,
+                            trenutniProces.ZauzeceProcessora,
+                            trenutniProces.ZauzeceMemorije
+                        );
+                    }
 
-                    Console.WriteLine($"Završeno! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)\n");
+                    
+                    currentCpuUsage -= trenutniProces.ZauzeceProcessora;
+                    currentMemoryUsage -= trenutniProces.ZauzeceMemorije;
+
+                    Console.WriteLine($"      Završeno! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)\n");
                 }
             }
 
+            
             if (procesiList.Count == 0 && clients.Count == 0)
             {
-                Console.WriteLine("\n════════════════════════════════════════");
-                Console.WriteLine("Svi procesi izvršeni!");
-                Console.WriteLine("Svi klijenti diskonektovani!");
-                Console.WriteLine("════════════════════════════════════════\n");
+                Console.WriteLine("\n");
+
+                Console.WriteLine("          STATISTIKA - SVE UTIČNICE ZATVORENE           ");
+                Console.WriteLine();
+
+                Console.WriteLine($"   NAJVEĆE ZAUZEĆE TOKOM AKTIVNOSTI SERVERA:");
+                Console.WriteLine($"    Maksimalno zauzeće procesora: {maxCpuUsage:F2}%");
+                Console.WriteLine($"     Maksimalno zauzeće memorije:  {maxMemoryUsage:F2}%");
+                Console.WriteLine();
+
+                if (shortestProces != null)
+                {
+                    Console.WriteLine($"  PROCES SA NAJKRAĆIM VREMENOM IZVRŠAVANJA:");
+                    Console.WriteLine($"   ├─ Naziv:              {shortestProces.Naziv}");
+                    Console.WriteLine($"   ├─ Vrijeme izvršavanja:  {shortestProces.VrijemeIzvrsavanja}s");
+                    Console.WriteLine($"   ├─ Prioritet:          {shortestProces.Prioritet}");
+                    Console.WriteLine($"   ├─ Zauzeće procesora:  {shortestProces.ZauzeceProcessora}%");
+                    Console.WriteLine($"   └─ Zauzeće memorije:   {shortestProces.ZauzeceMemorije}%");
+                }
+                else
+                {
+                    Console.WriteLine($"  Nijedan proces nije izvršen.");
+                }
+
+                Console.WriteLine();
+                Console.WriteLine("════════════════════════════════════════════════════════");
+                Console.WriteLine();
+
+                Console.WriteLine("Pritisnite bilo koji taster za zatvaranje servera...");
+                Console.ReadKey();
+                Environment.Exit(0);
             }
         }
     }

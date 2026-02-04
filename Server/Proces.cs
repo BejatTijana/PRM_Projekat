@@ -10,6 +10,9 @@ namespace Server
         public double ZauzeceProcessora { get; set; }
         public double ZauzeceMemorije { get; set; }
 
+        
+        public int OriginalnoVrijemeIzvrsavanja { get; set; }
+
         public Proces()
         {
         }
@@ -19,6 +22,7 @@ namespace Server
         {
             Naziv = naziv;
             VrijemeIzvrsavanja = vrijemeIzvrsavanja;
+            OriginalnoVrijemeIzvrsavanja = vrijemeIzvrsavanja;
             Prioritet = prioritet;
             ZauzeceProcessora = zauzeceProcessora;
             ZauzeceMemorije = zauzeceMemorije;
