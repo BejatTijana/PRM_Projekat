@@ -138,7 +138,7 @@ namespace Server
                             najkraci = p;
                     }
 
-                    Console.WriteLine($"[SJF] Izvršavam: {najkraci.Naziv} ({najkraci.VrijemeIzvrsavanja}s)");
+                    Console.WriteLine($" Izvršavam: {najkraci.Naziv} ({najkraci.VrijemeIzvrsavanja}s)");
                     System.Threading.Thread.Sleep(najkraci.VrijemeIzvrsavanja * 1000);
 
                     currentCpuUsage -= najkraci.ZauzeceProcessora;
@@ -151,6 +151,38 @@ namespace Server
             }
 
             acceptedSocket.Close();
+
+            
+            if (choice == "1" && procesiList.Count > 0)
+            {
+                Console.Write("\nQuantum (s): ");
+                int quantum = int.Parse(Console.ReadLine());
+
+                Console.WriteLine($"\n=== ROUND ROBIN (quantum={quantum}s) ===\n");
+
+                while (procesiList.Count > 0)
+                {
+                    Proces proces = procesiList[0];
+                    procesiList.RemoveAt(0);
+
+                    Console.WriteLine($"[ Izvršavam: {proces.Naziv} ({proces.VrijemeIzvrsavanja}s)");
+
+                    if (proces.VrijemeIzvrsavanja > quantum)
+                    {
+                        System.Threading.Thread.Sleep(quantum * 1000);
+                        proces.VrijemeIzvrsavanja -= quantum;
+                        procesiList.Add(proces);
+                        Console.WriteLine($"    Preostalo: {proces.VrijemeIzvrsavanja}s\n");
+                    }
+                    else
+                    {
+                        System.Threading.Thread.Sleep(proces.VrijemeIzvrsavanja * 1000);
+                        currentCpuUsage -= proces.ZauzeceProcessora;
+                        currentMemoryUsage -= proces.ZauzeceMemorije;
+                        Console.WriteLine($"   Završeno! CPU: {currentCpuUsage}%, RAM: {currentMemoryUsage}%\n");
+                    }
+                }
+            }
             Console.ReadKey();
         }
     }
