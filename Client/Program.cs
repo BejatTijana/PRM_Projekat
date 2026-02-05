@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.Serialization.Formatters.Binary;
-
+using System.Text.Json;
 namespace Client
 {
     class Client
@@ -48,41 +47,38 @@ namespace Client
                 while (true)
                 {
                     Console.WriteLine("--- UNOS PROCESA ---");
-                    Console.Write("Naziv (ili 'kraj'): ");
+                    Console.Write("Naziv procesa (ili 'kraj' za izlaz): ");
                     string naziv = Console.ReadLine();
 
                     if (naziv.ToLower() == "kraj")
                         break;
 
-                    Console.Write("Vrijeme izvršavanja (s): ");
+                    Console.Write("Vrijeme izvršavanja (sekunde): ");
                     int vrijeme = int.Parse(Console.ReadLine());
 
                     Console.Write("Prioritet: ");
                     int prioritet = int.Parse(Console.ReadLine());
 
-                    Console.Write("Zauzeće CPU (%): ");
+                    Console.Write("Zauzeće procesora (%): ");
                     double cpu = double.Parse(Console.ReadLine());
 
                     Console.Write("Zauzeće memorije (%): ");
                     double memorija = double.Parse(Console.ReadLine());
 
-                    Proces proces = new Proces(naziv, vrijeme, prioritet, cpu, memorija);
+                    Proces proces = new Proces(naziv, vreme, prioritet, cpu, memorija);
 
-                    byte[] data;
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        BinaryFormatter bf = new BinaryFormatter();
-                        bf.Serialize(ms, proces);
-                        data = ms.ToArray();
-                    }
+                    string json = System.Text.Json.JsonSerializer.Serialize(proces);
+                    byte[] data = Encoding.UTF8.GetBytes(json);
 
                     tcpSocket.Send(data);
-                    Console.WriteLine($" Proces '{naziv}' poslat!\n");
+                    Console.WriteLine($"\n Proces '{naziv}' poslat serveru!\n");
                 }
 
                 tcpSocket.Shutdown(SocketShutdown.Both);
                 tcpSocket.Close();
             }
+
+                
             catch (Exception ex)
             {
                 Console.WriteLine($"[GREŠKA] {ex.Message}");
