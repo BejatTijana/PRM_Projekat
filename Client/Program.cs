@@ -1,66 +1,93 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
 
-class Client
+namespace Client
 {
-    private const string SERVER_IP = "127.0.0.1";
-    private const int SERVER_UDP_PORT = 51000;
-
-    static void Main(string[] args)
+    class Client
     {
-        Console.WriteLine("--- Klijentska aplikacija pokrenuta ---");
+        private const string SERVER_IP = "127.0.0.1";
+        private const int SERVER_UDP_PORT = 51000;
 
-        Socket udpSocket = new Socket(AddressFamily.InterNetwork,
-                                      SocketType.Dgram,
-                                      ProtocolType.Udp);
-
-        IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP),
-                                                   SERVER_UDP_PORT);
-
-        string registrationMessage = "REGISTER";
-        byte[] messageBytes = Encoding.UTF8.GetBytes(registrationMessage);
-
-        try
+        static void Main(string[] args)
         {
-            udpSocket.SendTo(messageBytes, serverEndPoint);
-            Console.WriteLine("[UDP] Poslata poruka 'REGISTER' serveru...");
+            Console.WriteLine("=== KLIJENTSKA APLIKACIJA ===\n");
 
-            byte[] buffer = new byte[1024];
-            EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), SERVER_UDP_PORT);
 
-            int bytesReceived = udpSocket.ReceiveFrom(buffer, ref remoteEndPoint);
-            string response = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
-
-            if (int.TryParse(response, out int tcpPort))
+            try
             {
-                Console.WriteLine($"[UDP] Uspješna prijava! Primljen TCP port: {tcpPort}");
+                string registrationMessage = "REGISTER";
+                byte[] messageBytes = System.Text.Encoding.UTF8.GetBytes(registrationMessage);
+                udpSocket.SendTo(messageBytes, serverEndPoint);
+                Console.WriteLine("[UDP] Poslata poruka 'REGISTER' serveru...");
 
-                Socket tcpSocket = new Socket(AddressFamily.InterNetwork,
-                                              SocketType.Stream,
-                                              ProtocolType.Tcp);
+                byte[] buffer = new byte[1024];
+                EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                int bytesReceived = udpSocket.ReceiveFrom(buffer, ref remoteEndPoint);
+                string response = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesReceived);
 
+                if (!int.TryParse(response, out int tcpPort))
+                {
+                    Console.WriteLine("[GREŠKA] Server nije poslao validan port.");
+                    return;
+                }
+
+                Console.WriteLine($"[UDP] Primljen TCP port: {tcpPort}\n");
+                udpSocket.Close();
+
+                Socket tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), tcpPort);
-
                 tcpSocket.Connect(tcpEndPoint);
-                Console.WriteLine($"[TCP] Uspostavljena konekcija sa serverom na portu {tcpPort}!");
+                Console.WriteLine($"[TCP] Uspostavljena konekcija!\n");
 
+                while (true)
+                {
+                    Console.WriteLine("--- UNOS PROCESA ---");
+                    Console.Write("Naziv (ili 'kraj'): ");
+                    string naziv = Console.ReadLine();
+
+                    if (naziv.ToLower() == "kraj")
+                        break;
+
+                    Console.Write("Vrijeme izvršavanja (s): ");
+                    int vrijeme = int.Parse(Console.ReadLine());
+
+                    Console.Write("Prioritet: ");
+                    int prioritet = int.Parse(Console.ReadLine());
+
+                    Console.Write("Zauzeće CPU (%): ");
+                    double cpu = double.Parse(Console.ReadLine());
+
+                    Console.Write("Zauzeće memorije (%): ");
+                    double memorija = double.Parse(Console.ReadLine());
+
+                    Proces proces = new Proces(naziv, vrijeme, prioritet, cpu, memorija);
+
+                    byte[] data;
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        BinaryFormatter bf = new BinaryFormatter();
+                        bf.Serialize(ms, proces);
+                        data = ms.ToArray();
+                    }
+
+                    tcpSocket.Send(data);
+                    Console.WriteLine($" Proces '{naziv}' poslat!\n");
+                }
+
+                tcpSocket.Shutdown(SocketShutdown.Both);
                 tcpSocket.Close();
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("[Greska] Server nije poslao validan port.");
+                Console.WriteLine($"[GREŠKA] {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Greška pri komunikaciji: {ex.Message}");
-        }
-        finally
-        {
-            udpSocket.Close();
-            Console.WriteLine("\nKlijent završio. Pritisnite bilo koji taster za kraj.");
+
             Console.ReadKey();
         }
     }
