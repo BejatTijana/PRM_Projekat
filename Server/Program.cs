@@ -122,6 +122,35 @@ namespace Server
             udpSocket.Close();
 
             Console.WriteLine("\nPritisnite bilo koji taster...");
+
+            Console.WriteLine($"\nPrimljeno procesa: {procesiList.Count}");
+
+            if (choice == "2" && procesiList.Count > 0)
+            {
+                Console.WriteLine("\n=== SJF RASPOREĐIVANJE ===\n");
+
+                while (procesiList.Count > 0)
+                {
+                    Proces najkraci = procesiList[0];
+                    foreach (var p in procesiList)
+                    {
+                        if (p.VrijemeIzvrsavanja < najkraci.VrijemeIzvrsavanja)
+                            najkraci = p;
+                    }
+
+                    Console.WriteLine($"[SJF] Izvršavam: {najkraci.Naziv} ({najkraci.VrijemeIzvrsavanja}s)");
+                    System.Threading.Thread.Sleep(najkraci.VrijemeIzvrsavanja * 1000);
+
+                    currentCpuUsage -= najkraci.ZauzeceProcessora;
+                    currentMemoryUsage -= najkraci.ZauzeceMemorije;
+
+                    Console.WriteLine($"Završeno! CPU: {currentCpuUsage}%, RAM: {currentMemoryUsage}%\n");
+
+                    procesiList.Remove(najkraci);
+                }
+            }
+
+            acceptedSocket.Close();
             Console.ReadKey();
         }
     }
