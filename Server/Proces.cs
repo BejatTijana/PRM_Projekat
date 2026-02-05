@@ -2,7 +2,6 @@
 
 namespace Server
 {
-    [Serializable]
     public class Proces
     {
         public string Naziv { get; set; }
@@ -11,7 +10,9 @@ namespace Server
         public double ZauzeceProcessora { get; set; }
         public double ZauzeceMemorije { get; set; }
 
-        public Proces() { }
+        public Proces()
+        {
+        }
 
         public Proces(string naziv, int vrijemeIzvrsavanja, int prioritet,
                      double zauzeceProcessora, double zauzeceMemorije)
