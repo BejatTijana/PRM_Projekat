@@ -277,6 +277,16 @@ namespace Server
 
                     Console.WriteLine($"   Prihvaćen! (CPU: {currentCpuUsage:F1}%, RAM: {currentMemoryUsage:F1}%)");
                     Console.WriteLine($"     [Max do sada: CPU={maxCpuUsage:F1}%, RAM={maxMemoryUsage:F1}%]\n");
+
+                    try
+                    {
+                        byte[] acceptResponse = Encoding.UTF8.GetBytes("ACCEPTED");
+                        socket.Send(acceptResponse);
+                    }
+                    catch (SocketException ex)
+                    {
+                        Console.WriteLine($"[Greška slanja ACCEPTED] {ex.Message}");
+                    }
                 }
                 else
                 {
