@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Text;
+
 namespace Client
 {
     class Client
@@ -28,6 +29,7 @@ namespace Client
 
                 byte[] buffer = new byte[1024];
                 EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
                 int bytesReceived = udpSocket.ReceiveFrom(buffer, ref remoteEndPoint);
                 string response = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesReceived);
 
@@ -43,8 +45,12 @@ namespace Client
                 Socket tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), tcpPort);
                 tcpSocket.Connect(tcpEndPoint);
+
                 Console.WriteLine($"[TCP] Uspostavljena konekcija!\n");
+
+
                 List<Proces> pendingProcesi = new List<Proces>();
+
                 while (true)
                 {
                     Console.WriteLine("--- UNOS PROCESA ---");
@@ -72,14 +78,64 @@ namespace Client
                     byte[] data = Encoding.UTF8.GetBytes(json);
 
                     tcpSocket.Send(data);
-                    Console.WriteLine($"\n Proces '{naziv}' poslat serveru!\n");
+
+
+                    try
+                    {
+                        byte[] responseBuffer = new byte[1024];
+                        tcpSocket.ReceiveTimeout = 2000; 
+                        int responseBytes = tcpSocket.Receive(responseBuffer);
+
+                        if (responseBytes > 0)
+                        {
+                            string serverResponse = Encoding.UTF8.GetString(responseBuffer, 0, responseBytes);
+
+                            if (serverResponse == "PRIHVACENO")
+                            {
+                                Console.WriteLine($"\n Proces '{naziv}' prihvaćen od servera!\n");
+                            }
+                            else if (serverResponse == "ODBIJENO")
+                            {
+
+                                pendingProcesi.Add(proces);
+                                Console.WriteLine($"\n  Proces '{naziv}' odbijen - nedovoljno resursa.");
+                                Console.WriteLine($"   Proces sačuvan kao pending.\n");
+                            }
+                        }
+                    }
+                    catch (SocketException)
+                    {
+
+                        Console.WriteLine($"\n Proces '{naziv}' poslat serveru!\n");
+                    }
+                }
+
+
+                if (pendingProcesi.Count > 0)
+                {
+                    Console.WriteLine($"\n Imam {pendingProcesi.Count} pending procesa.");
+                    Console.WriteLine("   Pokušavam ponovo da pošaljem serveru...\n");
+
+                    foreach (var p in pendingProcesi)
+                    {
+                        string json = JsonSerializer.Serialize(p);
+                        byte[] data = Encoding.UTF8.GetBytes(json);
+
+                        tcpSocket.Send(data);
+                        Console.WriteLine($"    Poslat: {p.Naziv}");
+
+
+                        System.Threading.Thread.Sleep(100);
+                    }
+
+                    Console.WriteLine("\nSvi pending procesi poslati!\n");
                 }
 
                 tcpSocket.Shutdown(SocketShutdown.Both);
                 tcpSocket.Close();
-            }
 
-                
+                Console.WriteLine("Klijent završio rad.");
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"[GREŠKA] {ex.Message}");
