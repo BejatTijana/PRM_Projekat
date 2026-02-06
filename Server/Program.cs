@@ -280,12 +280,12 @@ namespace Server
 
                     try
                     {
-                        byte[] acceptResponse = Encoding.UTF8.GetBytes("ACCEPTED");
+                        byte[] acceptResponse = Encoding.UTF8.GetBytes("PRIHVACENO");
                         socket.Send(acceptResponse);
                     }
                     catch (SocketException ex)
                     {
-                        Console.WriteLine($"[Greška slanja ACCEPTED] {ex.Message}");
+                        Console.WriteLine($"[Greška slanja PRIHVACENO] {ex.Message}");
                     }
                 }
                 else
@@ -293,6 +293,15 @@ namespace Server
                     
                     client.PendingProcesi.Add(proces);
                     Console.WriteLine($"  Nedovoljno resursa! Čuva se kao pending.\n");
+                    try
+                    {
+                        byte[] rejectResponse = Encoding.UTF8.GetBytes("ODBIJENO");
+                        socket.Send(rejectResponse);
+                    }
+                    catch (SocketException ex)
+                    {
+                        Console.WriteLine($"[Greška slanja ODBIJENO] {ex.Message}");
+                    }
                 }
             }
             catch (SocketException ex)
