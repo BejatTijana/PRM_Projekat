@@ -44,7 +44,7 @@ namespace Client
                 IPEndPoint tcpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), tcpPort);
                 tcpSocket.Connect(tcpEndPoint);
                 Console.WriteLine($"[TCP] Uspostavljena konekcija!\n");
-
+                List<Proces> pendingProcesi = new List<Proces>();
                 while (true)
                 {
                     Console.WriteLine("--- UNOS PROCESA ---");
