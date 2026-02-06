@@ -221,10 +221,10 @@ namespace Server
 
                 if (bytesReceived == 0)
                 {
-                    
+
                     Console.WriteLine($"[TCP]  Klijent {client.EndPoint} se diskonektovao.");
 
-                    
+
                     if (client.PendingProcesi.Count > 0)
                     {
                         Console.WriteLine($"       Dodajem {client.PendingProcesi.Count} pending procesa...");
@@ -252,23 +252,23 @@ namespace Server
                     return;
                 }
 
-                
+
                 string json = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
                 Proces proces = JsonSerializer.Deserialize<Proces>(json);
 
                 Console.WriteLine($"[PRIMLJEN od {client.EndPoint}]");
                 Console.WriteLine($"  {proces}");
 
-                
+
                 if ((currentCpuUsage + proces.ZauzeceProcessora <= MAX_CPU) &&
                     (currentMemoryUsage + proces.ZauzeceMemorije <= MAX_MEMORY))
                 {
-                    
+
                     procesiList.Add(proces);
                     currentCpuUsage += proces.ZauzeceProcessora;
                     currentMemoryUsage += proces.ZauzeceMemorije;
 
-                    
+
                     if (currentCpuUsage > maxCpuUsage)
                         maxCpuUsage = currentCpuUsage;
 
@@ -280,36 +280,58 @@ namespace Server
 
                     try
                     {
-                        byte[] acceptResponse = Encoding.UTF8.GetBytes("PRIHVACENO");
-                        socket.Send(acceptResponse);
+                        if (socket.Connected && socket.Poll(0, SelectMode.SelectWrite))
+                        {
+                            byte[] acceptResponse = Encoding.UTF8.GetBytes("PRIHVACENO");
+                            socket.Send(acceptResponse);
+                        }
                     }
                     catch (SocketException ex)
                     {
-                        Console.WriteLine($"[Greška slanja PRIHVACENO] {ex.Message}");
+
                     }
                 }
                 else
                 {
-                    
+
                     client.PendingProcesi.Add(proces);
                     Console.WriteLine($"  Nedovoljno resursa! Čuva se kao pending.\n");
                     try
                     {
-                        byte[] rejectResponse = Encoding.UTF8.GetBytes("ODBIJENO");
-                        socket.Send(rejectResponse);
+                        if (socket.Connected && socket.Poll(0, SelectMode.SelectWrite))
+                        {
+                            byte[] rejectResponse = Encoding.UTF8.GetBytes("ODBIJENO");
+                            socket.Send(rejectResponse);
+                        }
                     }
                     catch (SocketException ex)
                     {
-                        Console.WriteLine($"[Greška slanja ODBIJENO] {ex.Message}");
+
                     }
                 }
             }
             catch (SocketException ex)
             {
-                if (ex.SocketErrorCode != SocketError.WouldBlock)
+                if (ex.SocketErrorCode == SocketError.WouldBlock)
                 {
-                    Console.WriteLine($"[Greška od {client.EndPoint}] {ex.Message}");
+
+                   
+                    return;
                 }
+                else if (ex.SocketErrorCode == SocketError.ConnectionReset || ex.SocketErrorCode == SocketError.ConnectionAborted)
+
+                {
+                    Console.WriteLine($"[TCP]  Klijent {client.EndPoint} se diskonektovao (greška).");
+                    socket.Close();
+                    clients.Remove(client);
+                }
+                else
+                {
+                    Console.WriteLine($"[Socket greska od {client.EndPoint}] naglo diskonektovan.");
+                }
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"[Opsta greska] {ex.Message}");
             }
         }
 
