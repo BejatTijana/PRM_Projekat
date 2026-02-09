@@ -90,11 +90,11 @@ namespace Client
                         {
                             string serverResponse = Encoding.UTF8.GetString(responseBuffer, 0, responseBytes);
 
-                            if (serverResponse == "PRIHVACENO")
+                            if (serverResponse == "ACCEPTED")
                             {
                                 Console.WriteLine($"\n Proces '{naziv}' prihvaćen od servera!\n");
                             }
-                            else if (serverResponse == "ODBIJENO")
+                            else if (serverResponse == "REJECTED")
                             {
 
                                 pendingProcesi.Add(proces);

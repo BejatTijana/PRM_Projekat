@@ -282,7 +282,7 @@ namespace Server
                     {
                         if (socket.Connected && socket.Poll(0, SelectMode.SelectWrite))
                         {
-                            byte[] acceptResponse = Encoding.UTF8.GetBytes("PRIHVACENO");
+                            byte[] acceptResponse = Encoding.UTF8.GetBytes("ACCEPTED");
                             socket.Send(acceptResponse);
                         }
                     }
@@ -300,7 +300,7 @@ namespace Server
                     {
                         if (socket.Connected && socket.Poll(0, SelectMode.SelectWrite))
                         {
-                            byte[] rejectResponse = Encoding.UTF8.GetBytes("ODBIJENO");
+                            byte[] rejectResponse = Encoding.UTF8.GetBytes("REJECTED");
                             socket.Send(rejectResponse);
                         }
                     }
